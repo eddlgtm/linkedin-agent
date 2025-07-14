@@ -1,0 +1,6 @@
+.env
+.ruff_cache
+.venv
+__pycache__
+
+research_db/
