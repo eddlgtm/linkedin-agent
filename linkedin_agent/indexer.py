@@ -1,5 +1,3 @@
-import re
-
 import arxiv
 from langchain_chroma import Chroma
 from langchain_community.retrievers import ArxivRetriever
@@ -40,9 +38,10 @@ def search_arxiv_for_papers(search_query: str, max_results: int = 10):
 
     results = list(client.results(search))
     urls = [r.entry_id for r in results]
-    arxiv_ids = [url.split('/')[-1].split('v')[0] for url in urls]
+    arxiv_ids = [url.split("/")[-1].split("v")[0] for url in urls]
 
     return arxiv_ids
+
 
 def get_documents(arxiv_id: str) -> list[Document]:
     docs = retriever.invoke(arxiv_id)
@@ -53,12 +52,3 @@ def get_documents(arxiv_id: str) -> list[Document]:
 def index(documents: list[Document]) -> None:
     all_splits = text_splitter.split_documents(documents)
     vector_store.add_documents(documents=all_splits)
-
-
-if __name__ == "__main__":
-
-    ids = search_arxiv_for_papers("LLMs", 1)
-
-    for id in ids:
-        documents = get_documents(id)
-        index(documents)

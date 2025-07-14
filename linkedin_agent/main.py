@@ -1,24 +1,25 @@
 from langchain.chat_models import init_chat_model
-from langchain_chroma import Chroma
-from langchain_community.retrievers import ArxivRetriever
-from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate
 
-llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+from indexer import get_documents, index, search_arxiv_for_papers
+from prompts import RESEARCH_TEMPLATE
+from retriever import graph
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+llm = init_chat_model("gpt-4o", model_provider="openai")
 
-vector_store = Chroma(
-    collection_name="research",
-    embedding_function=embeddings,
-    persist_directory="./research_db",
-)
+prompt = PromptTemplate.from_template(RESEARCH_TEMPLATE)
 
-retriever = ArxivRetriever(
-    load_max_docs=1,
-    get_full_documents=True,
-    doc_content_chars_max=None,
-)
+question = "Recent LLM-as-a-Judge research"
 
-docs = retriever.invoke("2507.08392")
+messages = prompt.invoke({"question": question})
+response = llm.invoke(messages)
+research_query = response.content
 
-print(docs[0].page_content)
+ids = search_arxiv_for_papers(research_query)
+
+for id in ids:
+    documents = get_documents(id)
+    index(documents)
+
+result = graph.invoke({"question": "What is the latest LLM-as-a-Judge research?"})
+print(f"Answer: {result['answer']}")
